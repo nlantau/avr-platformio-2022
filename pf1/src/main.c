@@ -50,22 +50,23 @@ int main(void) {
 
     init_leds();
 
-    for (;;) {
-        asm volatile("nop");
-    }
+    for (;;) asm volatile("nop");
 
     return 0;
 
 } /* End main() */
 
+/***** Functions **********************************************************/
 static void init_leds(void) {
     DDRD |= (1 << PIND3) | (1 << PIND6);
     DDRB |= (1 << PINB1);
 
     PORTD &= ~((1 << PIND3) | (1 << PIND6));
     PORTB &= ~(1 << PINB1);
+
 } /* End init_leds() */
 
+/***** ISR ****************************************************************/
 ISR(TIMER0_OVF_vect, ISR_BLOCK) {
     /* TOV0 is cleared by hw when ISR executes */
     timer_t.timer0_ovf_counter++;
@@ -88,7 +89,8 @@ ISR(TIMER0_OVF_vect, ISR_BLOCK) {
         /* Re-enable interrupts */
         SREG = _sreg;
     }
-}
+
+} /* End ISR */
 
 ISR(TIMER1_COMPA_vect, ISR_BLOCK) {
     /* Critical section. Save SREG and disable ISR */
@@ -107,7 +109,8 @@ ISR(TIMER1_COMPA_vect, ISR_BLOCK) {
 
     /* Re-enable interrupts */
     SREG = _sreg;
-}
+
+} /*End ISR */
 
 ISR(TIMER2_OVF_vect, ISR_BLOCK) {
     /* TOV0 is cleared by hw when ISR executes */
@@ -134,5 +137,7 @@ ISR(TIMER2_OVF_vect, ISR_BLOCK) {
         /* Re-enable interrupts */
         SREG = _sreg;
     }
-}
+
+} /* End ISR */
+
 /* End main.c */
