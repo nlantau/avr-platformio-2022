@@ -41,7 +41,7 @@ struct timers_config_t timer_t = {
 /***** MAIN ***************************************************************/
 
 int main(void) {
-    uart_t.init_f();
+    uart_t.init_f(BAUD_9600);
 
     timer_t.init_f_0();
     timer_t.init_f_1();

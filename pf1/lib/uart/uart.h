@@ -36,16 +36,31 @@
 /* Must return 'int' according to the definition of
  * FDEV_SETUP_STREAM() in stdio.h */
 extern int uart_putchar_stream(char c, FILE *stream);
-extern uint8_t uart_init(void);
+// extern uint8_t uart_init(void);
+extern uint8_t uart_init(uint16_t baud);
 extern uint8_t stdout_init(void);
 extern uint8_t uart_getc(void);
 extern void uart_putc(uint8_t data);
 extern void uart_puts(const char *x);
 
+/***** Enum Definition ****************************************************/
+enum uart_baud {
+    BAUD_9600 = 9600,
+};
+
 /***** Structures *********************************************************/
+struct ring_buffer {
+    volatile uint8_t head;
+    volatile uint8_t tail;
+    volatile uint8_t ring[1];
+
+}
+#define RING_SIZE (sizeof(struct ring_buffer) - 1)
+
+/***** Structure Config ***************************************************/
 struct uart_config_t {
     uint16_t baud;
-    uint8_t (*init_f)(void);
+    uint8_t (*init_f)(uint16_t baud);
     uint8_t (*stdout_f)(void);
     uint8_t (*getc_f)(void);
     void (*putc_f)(uint8_t data);

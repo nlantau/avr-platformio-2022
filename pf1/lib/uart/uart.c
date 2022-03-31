@@ -26,7 +26,12 @@ uint8_t stdout_init(void) {
     return SUCCESS;
 }
 
-uint8_t uart_init(void) {
+uint8_t uart_init(uint16_t baud) {
+#ifndef F_CPU
+#warning F_CPU NOT SET
+#else
+    uint8_t MY_UBRR = F_CPU / 16 / baud - 1;
+#endif /* F_CPU */
     /* Sets BAUD to 9600 */
     UBRR0H = MYUBRR >> 8;
     UBRR0L = MYUBRR;
