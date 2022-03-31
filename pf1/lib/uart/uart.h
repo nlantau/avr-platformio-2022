@@ -53,8 +53,8 @@ struct ring_buffer {
     volatile uint8_t head;
     volatile uint8_t tail;
     volatile uint8_t ring[1];
+};
 
-}
 #define RING_SIZE (sizeof(struct ring_buffer) - 1)
 
 /***** Structure Config ***************************************************/
