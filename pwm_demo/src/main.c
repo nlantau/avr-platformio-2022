@@ -91,6 +91,7 @@ ISR(USART_RX_vect, ISR_BLOCK) {
 
             /* Send back and clear buffer */
             uart_puts((const char *)rx_data);
+            uart_putc('\n');
             memset((void *)rx_data, '\0', BUFF_SIZE);
             _index = 0;
             SREG = _sreg;
