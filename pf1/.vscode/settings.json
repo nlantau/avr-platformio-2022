@@ -1,3 +1,9 @@
 {
-    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4, UseTab: Never }"
+  "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4, UseTab: Never }",
+  "files.associations": {
+    "*.ejs": "html",
+    "interrupt.h": "c",
+    "timers.h": "c",
+    "stdio.h": "c"
+  }
 }
