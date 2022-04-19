@@ -37,6 +37,8 @@ static void uart_putc(uint8_t data);
 static void uart_puts(const char *s);
 static void timer0_init(void);
 static void timer1_init(void);
+static void printer_putc(unsigned char p, uint8_t x, uint8_t y);
+static void printer_puts(char *s, uint8_t x, uint8_t y);
 
 /***** Structures *********************************************************/
 
@@ -53,6 +55,7 @@ int main(void) {
     init_leds();
     lcd_init(0xAF);
     lcd_clrscr();
+    printer_puts("PWM value: ", 0, 0);
 
     OCR1A = TIMER1_CTC_VALUE;
 
@@ -65,7 +68,7 @@ int main(void) {
 
 /***** OLED ***************************************************************/
 
-void printer_putc(unsigned char p, uint8_t x, uint8_t y) {
+static void printer_putc(unsigned char p, uint8_t x, uint8_t y) {
     lcd_gotoxy(x, y);
     i2c_start(LCD_I2C_ADR << 1);
     i2c_write(0x40);
@@ -76,7 +79,7 @@ void printer_putc(unsigned char p, uint8_t x, uint8_t y) {
 
 } /* End printer_putc() */
 
-void printer_puts(char *s, uint8_t x, uint8_t y) {
+static void printer_puts(char *s, uint8_t x, uint8_t y) {
     while (*s) {
         printer_putc(*s++, x++, y);
     }
@@ -106,7 +109,6 @@ ISR(USART_RX_vect, ISR_BLOCK) {
             /* Send back and clear buffer */
             uart_puts((const char *)rx_data);
 
-            printer_puts("PWM value: ", 0, 0);
             printer_puts("       ", 12, 0);
             for (int i = 0; rx_data[i] != '\0'; ++i) {
                 printer_putc(rx_data[i], i + 12, 0);
