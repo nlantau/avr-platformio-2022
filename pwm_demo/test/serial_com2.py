@@ -25,7 +25,7 @@ class MainFrame(ttk.Frame):
         super().__init__(container)
 
         self.parent = container
-
+        self._is_started = False
         self.ser_th = None
         
         options = {'padx': 5, 'pady':5}
@@ -45,15 +45,24 @@ class MainFrame(ttk.Frame):
 
         self.button_exit = ttk.Button(self, text="Exit", command=self.parent.destroy)
         self.button_exit.pack(**options, side=tk.LEFT)
+
+
+        # Radio buttons
+        self.selected_size = tk.StringVar()
+        self.fast = ttk.Radiobutton(self, text="Fast", value="0.001", variable=self.selected_size).pack(side=tk.LEFT)
+        self.med = ttk.Radiobutton(self, text="Medium", value="0.01", variable=self.selected_size).pack(side=tk.LEFT)
+        self.slow = ttk.Radiobutton(self, text="Slow", value="0.1", variable=self.selected_size).pack(side=tk.LEFT)
+
+
         # Show the frame on the container
         self.pack(**options)
 
-        self._is_started = False
+
 
 
     def button_clicked_start(self):
-        if not self._is_started:
-            self.ser_th = SerialReader(self)
+        if not self._is_started and len(self.selected_size.get()) > 0:
+            self.ser_th = SerialReader(self, sleep=self.selected_size.get())
             self.ser_th.start()
             self._is_started = True
 
@@ -66,14 +75,15 @@ class MainFrame(ttk.Frame):
 class SerialReader(threading.Thread):
 
     def __init__(self, parent, PORT='/dev/ttyUSB0', BAUD=9600, sleep=0.1):
-        threading.Thread.__init__(self)
+        #threading.Thread.__init__(self)
+        super().__init__()
         self.parent = parent
         self.PORT = PORT
         self.BAUD = BAUD
         self._do_run = True
         self._transceive_th = threading.Thread(target=self.transceive)
 
-        self._sleep_dur = sleep
+        self._sleep_dur = float(sleep)
 
 
         self.ser = serial.Serial(self.PORT, self.BAUD, parity=serial.PARITY_EVEN, stopbits=2, timeout=0.5)
