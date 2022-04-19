@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # nlantau, 2022-04-19
+# updated, 2022-04-20
 
-from concurrent.futures import thread
 import serial
 import time
 import tkinter as tk
@@ -9,13 +9,12 @@ from tkinter import ttk
 import threading
 
 
-
 class App(tk.Tk):
 
     def __init__(self):
         super().__init__()
         self.title('Serial UART - LED control')
-        self.geometry('400x200')
+        self.geometry('400x200+50+50')
         self.minsize(200,100)
         self.maxsize(450, 250)
         self.resizable(1,1)
@@ -87,7 +86,7 @@ class MainFrame(ttk.Frame):
         # Checkbox
         self.iv_c1 = tk.IntVar()
         self.c1 = ttk.Checkbutton(self, text="Use preset", variable=self.iv_c1, onvalue=1, offvalue=0, width=10)
-        self.c1.grid(column=2, row=4, **options)
+        self.c1.grid(column=2, row=1, **options)
 
         self._ent_valid = ""
         self._ent_valid_st = ""
@@ -149,7 +148,6 @@ class MainFrame(ttk.Frame):
 class SerialReader(threading.Thread):
 
     def __init__(self, parent, PORT='/dev/ttyUSB0', BAUD=9600, sleep=0.1, step=1, top=256):
-        #threading.Thread.__init__(self)
         super().__init__()
         self.parent = parent
         self.PORT = PORT
@@ -169,7 +167,6 @@ class SerialReader(threading.Thread):
 
     def stop(self):
         self._do_run = False
-        #print(f'{self.rx}, {self._do_run} {self._transceive_th.name}')
         self.ser.cancel_read()
         self.ser.cancel_write()
         self.join()
@@ -178,34 +175,27 @@ class SerialReader(threading.Thread):
     def transceive(self):
         while self._do_run:
             try:
-                for i in range(0, self._top, self._step):
-                    inp = f'{i}\n'
-                    inp = bytes(inp, "utf-8")
+                self._runner(0, self._top, self._step, self._sleep_dur)
+                self._runner(self._top - 1, -1, -self._step, self._sleep_dur)
 
-                    self.ser.write(inp)
-                    self.rx = self.ser.readline()
-                    #print(f'{self.rx}, {self._do_run} {self._transceive_th.getName()}')
-
-                    self.parent.label['text'] = self.rx
-
-                    time.sleep(self._sleep_dur)
-                for i in range(self._top -1, -1, -self._step):
-                    inp = f'{i}\n'
-                    inp = bytes(inp, "utf-8")
-
-                    self.ser.write(inp)
-                    self.rx = self.ser.readline()
-                    #print(f'{self.rx}, {self._do_run}')
-                    self.parent.label['text'] = self.rx
-
-                    time.sleep(self._sleep_dur)
             except serial.SerialException as e:
                 if self._do_run:
                     print(e)
             except Exception:
                 pass
-
         print("Canceled")
+
+    def _runner(self, start, stop, step, sleep):
+        for i in range(start, stop, step):
+            self.ser.write(bytes(f'{i}\n', "utf-8"))
+
+            # The AVR program is transmitting back the string is receives,
+            # which is why we must readline, which we might use to set a label
+            self.rx = self.ser.readline()
+
+            self.parent.label['text'] = self.rx
+
+            time.sleep(sleep)
 
 if __name__ == "__main__":
     app = App()
