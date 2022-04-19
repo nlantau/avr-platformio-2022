@@ -36,7 +36,7 @@ void serialBT_to_OLED_UART(char *c);
 /***** Main ***************************************************************/
 void setup(void) {
     /* UART, baud rate 9600 */
-    Serial.begin(9600);
+    Serial.begin(9600, SERIAL_8E2);
 
     /* Bluetooth, name "ESP" */
     SerialBT.begin("ESP");

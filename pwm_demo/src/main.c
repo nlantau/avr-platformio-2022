@@ -14,6 +14,9 @@
 /***** Include section ****************************************************/
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <font.h>
+#include <i2cmaster.h>
+#include <lcd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,6 +51,8 @@ int main(void) {
     timer0_init();
     timer1_init();
     init_leds();
+    lcd_init(0xAF);
+    lcd_clrscr();
 
     OCR1A = TIMER1_CTC_VALUE;
 
@@ -57,6 +62,26 @@ int main(void) {
     return 0;
 
 } /* End main() */
+
+/***** OLED ***************************************************************/
+
+void printer_putc(unsigned char p, uint8_t x, uint8_t y) {
+    lcd_gotoxy(x, y);
+    i2c_start(LCD_I2C_ADR << 1);
+    i2c_write(0x40);
+    for (uint8_t i = 0; i < 7; i++) {
+        i2c_write(pgm_read_byte(&(FONT[(p - 65) + 33][i])));
+    }
+    i2c_stop();
+
+} /* End printer_putc() */
+
+void printer_puts(char *s, uint8_t x, uint8_t y) {
+    while (*s) {
+        printer_putc(*s++, x++, y);
+    }
+
+} /* End printer_puts() */
 
 /***** UART ***************************************************************/
 ISR(USART_RX_vect, ISR_BLOCK) {
@@ -80,6 +105,13 @@ ISR(USART_RX_vect, ISR_BLOCK) {
 
             /* Send back and clear buffer */
             uart_puts((const char *)rx_data);
+
+            printer_puts("PWM value: ", 0, 0);
+            printer_puts("       ", 12, 0);
+            for (int i = 0; rx_data[i] != '\0'; ++i) {
+                printer_putc(rx_data[i], i + 12, 0);
+            }
+
             uart_putc('\n');
             memset((void *)rx_data, '\0', BUFF_SIZE);
             _index = 0;
@@ -106,6 +138,12 @@ uart_init(void) {
 
     /* 8-bit character size */
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+
+    /* Enabled, even parity bit */
+    UCSR0C |= (1 << UPM01);
+
+    /* Stop bits: 2-bit*/
+    UCSR0C |= (1 << USBS0);
 
     /* Sets BAUD to 9600 */
     UBRR0H = MYUBRR >> 8;
