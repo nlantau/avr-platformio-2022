@@ -46,6 +46,14 @@ static void printer_puts(char *s, uint8_t x, uint8_t y);
 static volatile uint8_t _index = 0;
 static volatile uint8_t rx_data[BUFF_SIZE];
 static volatile uint8_t converted_rx;
+static volatile uint8_t counter;
+static volatile uint8_t counter_buff[BUFF_SIZE];
+static volatile uint8_t is_first_zero = 1;
+
+static volatile uint8_t time_buff[BUFF_SIZE * 2];
+static volatile uint8_t seconds = 0;
+static volatile uint8_t minutes = 0;
+static volatile uint8_t hours = 0;
 
 /***** MAIN ***************************************************************/
 int main(void) {
@@ -56,6 +64,8 @@ int main(void) {
     lcd_init(0xAF);
     lcd_clrscr();
     printer_puts("PWM value: ", 0, 0);
+    printer_puts("Counter  : ", 0, 1);
+    printer_puts("Uptime   : ", 0, 2);
 
     OCR1A = TIMER1_CTC_VALUE;
 
@@ -95,8 +105,10 @@ ISR(USART_RX_vect, ISR_BLOCK) {
 
         if (_index >= (BUFF_SIZE - 1) || rx_data[_index - 1] == '\n') {
             /* Critical section */
+#if NO_ISR_BLOCK
             volatile uint8_t _sreg = SREG;
             cli();
+#endif /* NO_ISR_BLOCK */
 
             /* This is NOT a pretty nor safe solution */
             rx_data[_index - 1] = '\0';
@@ -116,8 +128,22 @@ ISR(USART_RX_vect, ISR_BLOCK) {
 
             uart_putc('\n');
             memset((void *)rx_data, '\0', BUFF_SIZE);
+
+            if (converted_rx == 0 && is_first_zero) {
+                is_first_zero = 0;
+                counter++;
+                memset((void *)counter_buff, '\0', BUFF_SIZE);
+                sprintf(counter_buff, "%d", counter);
+                printer_puts("     ", 12, 1);
+                printer_puts(counter_buff, 12, 1);
+            } else if (converted_rx == 0 && !is_first_zero) {
+                is_first_zero = 1;
+            }
+
             _index = 0;
+#if NO_ISR_BLOCK
             SREG = _sreg;
+#endif /* NO_ISR_BLOCK */
         }
 
     } else {
@@ -181,6 +207,7 @@ static void timer0_init(void) {
     TCCR0A |= (1 << COM0A1);
 
     /* clk/1024 prescaler */
+
     TCCR0B |= (1 << CS00) | (1 << CS02);
 }
 
@@ -205,6 +232,22 @@ static void timer1_init(void) {
 ISR(TIMER1_COMPA_vect, ISR_BLOCK) {
     /* Toggle LED to show ISR functionality */
     PORTB ^= (1 << PINB1);
+    seconds++;
+    if (seconds == 60) {
+        minutes++;
+        seconds = 0;
+    }
+    if (minutes == 60) {
+        hours++;
+        minutes = 0;
+    }
+    memset((void *)time_buff, '\0', BUFF_SIZE * 2);
+    sprintf(time_buff, "%2d:%2d:%2d", hours, minutes, seconds);
+
+    printer_puts("       ", 11, 2);
+    for (int i = 0; time_buff[i] != '\0'; ++i) {
+        printer_putc(time_buff[i], i + 11, 2);
+    }
 
 } /* End ISR */
 

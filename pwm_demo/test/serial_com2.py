@@ -2,11 +2,12 @@
 # nlantau, 2022-04-19
 # updated, 2022-04-20
 
+import re
 import serial
 import time
+import threading
 import tkinter as tk
 from tkinter import ttk
-import threading
 
 
 class App(tk.Tk):
@@ -95,7 +96,6 @@ class MainFrame(ttk.Frame):
         self.grid(**options)
 
     def _entry_tracer(self, *args):
-        import re
         com1 = re.compile(r'([0-9]{1,7})(\.[0-9]+)?')
         var_len = len(self.var_inp.get())
         if 7 > var_len > 0 and com1.fullmatch(str(self.var_inp.get())):
