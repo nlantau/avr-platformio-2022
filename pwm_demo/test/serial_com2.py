@@ -1,13 +1,11 @@
 #! /usr/bin/env python
 # nlantau, 2022-04-19
-# updated, 2022-04-20
+# updated, 2022-04-21
 
 import logging
 import re
-from turtle import bgcolor
 import serial
 import serial.tools.list_ports
-import time
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -15,6 +13,7 @@ import time
 
 
 class App(tk.Tk):
+    """Root object"""
 
     def __init__(self):
         log_name = f'{time.strftime("%Y-%m-%d", time.localtime())}'
@@ -30,10 +29,10 @@ class App(tk.Tk):
 
 class MainFrame(ttk.Frame):
 
-    def __init__(self, container):
-        super().__init__(container)
+    def __init__(self, parent):
+        super().__init__(parent)
 
-        self.parent = container
+        self.parent = parent
         self._is_started = False
         self.ser_th = None
         self._float_regex = re.compile(r'([0-9]{1,7})(\.[0-9]+)?')
@@ -59,7 +58,7 @@ class MainFrame(ttk.Frame):
 
         # User input - Sleep
         self.var_inp = tk.StringVar()
-        self.var_inp.trace_add("write", self._entry_tracer)
+        self.var_inp.trace_add("write", self._entry_check_float)
         self.var_label = ttk.Label(self, text="Sleep (in seconds): ")
         self.var_label.grid(column=0, row=0, **options, sticky='nw')
 
@@ -68,7 +67,7 @@ class MainFrame(ttk.Frame):
 
         # User input - Step
         self.var_inp_st = tk.StringVar()
-        self.var_inp_st.trace_add("write", self._entry_tracer_st)
+        self.var_inp_st.trace_add("write", self._entry_check_int)
         self.var_label_st = ttk.Label(self, text="Step size: ")
         self.var_label_st.grid(column=0, row=1, **options, sticky='nw')
 
@@ -137,7 +136,7 @@ class MainFrame(ttk.Frame):
     def set_circle_color(self, color):
         self.canvas.itemconfig(self.circle, fill=color)
 
-    def _entry_tracer(self, *args):
+    def _entry_check_float(self, *args):
         var_len = len(self.var_inp.get())
         if 7 > var_len > 0 and self._float_regex.fullmatch(str(self.var_inp.get())):
             logging.debug(f"in - check, {self.var_inp.get()=}")
@@ -146,7 +145,7 @@ class MainFrame(ttk.Frame):
             logging.debug(f"in - not valid, {self.var_inp.get()=}")
             self._ent_valid = ""
 
-    def _entry_tracer_st(self, *args):
+    def _entry_check_int(self, *args):
         var_len = len(self.var_inp_st.get())
         if 3 > var_len > 0 and self._int_regex.fullmatch(self.var_inp_st.get()):
             logging.debug("in")
